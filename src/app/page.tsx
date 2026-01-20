@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store';
 import { getProfile, getSettings, isSetupComplete as checkSetup } from '@/lib/storage';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Onboarding } from '@/components/Onboarding';
 import { Companion } from '@/components/Companion';
 import { PinEntry } from '@/components/PinEntry';
@@ -34,8 +35,8 @@ export default function Home() {
             setCurrentScreen('companion');
           }
         }
-      } catch (error) {
-        console.error('Failed to load data:', error);
+      } catch {
+        // Failed to load from IndexedDB - will start fresh with onboarding
       } finally {
         setIsLoading(false);
       }
@@ -54,16 +55,20 @@ export default function Home() {
     );
   }
 
-  switch (currentScreen) {
-    case 'onboarding':
-      return <Onboarding />;
-    case 'companion':
-      return <Companion />;
-    case 'pin_entry':
-      return <PinEntry />;
-    case 'settings':
-      return <Settings />;
-    default:
-      return <Onboarding />;
-  }
+  const renderScreen = () => {
+    switch (currentScreen) {
+      case 'onboarding':
+        return <Onboarding />;
+      case 'companion':
+        return <Companion />;
+      case 'pin_entry':
+        return <PinEntry />;
+      case 'settings':
+        return <Settings />;
+      default:
+        return <Onboarding />;
+    }
+  };
+
+  return <ErrorBoundary>{renderScreen()}</ErrorBoundary>;
 }

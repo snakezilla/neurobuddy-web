@@ -8,6 +8,18 @@ import { useTTS } from '@/hooks/useTTS';
 import { findRoutineByTrigger } from '@/lib/routines';
 import type { AvatarState, FrustrationLevel } from '@/types';
 
+// Debounce helper
+function debounce<T extends (...args: Parameters<T>) => void>(
+  fn: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: NodeJS.Timeout | null = null;
+  return (...args: Parameters<T>) => {
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), delay);
+  };
+}
+
 // Fallback phrases for offline mode
 const OFFLINE_PHRASES = [
   "I'm here with you!",
@@ -46,36 +58,71 @@ export function Companion() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [showHelpAlert, setShowHelpAlert] = useState(false);
-  const [lastTranscript, setLastTranscript] = useState('');
   const [immersiveMode, setImmersiveMode] = useState(true); // Hide UI by default
   const [micActive, setMicActive] = useState(false); // Track if mic should be on
+  const [displayTranscript, setDisplayTranscript] = useState(''); // For UI display only
+
+  // Queue-based transcript processing to avoid race conditions
+  const transcriptQueueRef = useRef<string[]>([]);
+  const isProcessingRef = useRef(false); // Use ref to avoid stale closure issues
   const frustrationCountRef = useRef(0);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasGreetedRef = useRef(false);
   const isMountedRef = useRef(true);
 
-  const { speak, stop: stopSpeaking, isSpeaking } = useTTS({
+  const { speak, stop: stopSpeaking, isSpeaking, isLoading: isTTSLoading } = useTTS({
     sensoryPreference: childProfile?.sensoryPreference,
     useElevenLabs: true,
   });
 
+  // Process queue of transcripts (handles race conditions)
+  const processQueue = useCallback(async () => {
+    if (isProcessingRef.current || transcriptQueueRef.current.length === 0) {
+      return;
+    }
+
+    const transcript = transcriptQueueRef.current.shift();
+    if (!transcript) return;
+
+    isProcessingRef.current = true;
+    setIsProcessing(true);
+    await processUserInput(transcript);
+    isProcessingRef.current = false;
+    setIsProcessing(false);
+
+    // Process next in queue if any
+    if (transcriptQueueRef.current.length > 0 && !isSpeaking) {
+      processQueue();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSpeaking]);
+
+  // Debounced handler for speech results (prevents rapid-fire processing)
+  const debouncedHandleResult = useCallback(
+    debounce((transcript: string) => {
+      setDisplayTranscript(transcript);
+      transcriptQueueRef.current.push(transcript);
+      // Only start processing if not currently speaking
+      if (!isSpeaking && !isProcessingRef.current) {
+        processQueue();
+      }
+    }, 300),
+    [isSpeaking, processQueue]
+  );
+
   // Speech recognition with ability to pause/resume
   const { isSupported, isListening, startListening, stopListening, error: speechError } = useSpeechRecognition({
-    onResult: useCallback((transcript: string) => {
-      setLastTranscript(transcript);
-    }, []),
+    onResult: debouncedHandleResult,
     onListeningChange: setListening,
     continuous: true,
   });
 
-  // Process transcript when it changes (and not speaking)
+  // Process queue when speaking stops
   useEffect(() => {
-    if (lastTranscript && !isSpeaking && !isProcessing) {
-      processUserInput(lastTranscript);
-      setLastTranscript(''); // Clear after processing
+    if (!isSpeaking && transcriptQueueRef.current.length > 0 && !isProcessingRef.current) {
+      processQueue();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastTranscript, isSpeaking, isProcessing]);
+  }, [isSpeaking, processQueue]);
 
   // Pause listening while speaking to prevent feedback
   useEffect(() => {
@@ -200,11 +247,16 @@ export function Companion() {
 
         // Handle routine progress
         if (currentRoutine && data.indicatesProgress) {
-          if (currentStepIndex < currentRoutine.steps.length - 1) {
-            nextStep();
-            // Celebrate and move to next step
+          const isLastStep = currentStepIndex >= currentRoutine.steps.length - 1;
+
+          if (!isLastStep) {
+            // Calculate next step index BEFORE calling nextStep to avoid stale closure
+            const nextStepIndex = currentStepIndex + 1;
+            const nextInstruction = currentRoutine.steps[nextStepIndex]?.instruction;
+
+            nextStep(); // Now advance the step
             setAvatarState('celebrating');
-            const nextInstruction = currentRoutine.steps[currentStepIndex + 1]?.instruction;
+
             if (nextInstruction) {
               await speak(assistantMessage + ' ' + nextInstruction);
             } else {
@@ -228,9 +280,7 @@ export function Companion() {
           frustrationCountRef.current++;
           handleFrustrationEscalation(frustrationCountRef.current);
         }
-      } catch (error) {
-        console.error('Chat error:', error);
-
+      } catch {
         if (retryTimeoutRef.current) {
           clearTimeout(retryTimeoutRef.current);
         }
@@ -411,10 +461,16 @@ export function Companion() {
 
             {/* Status indicators */}
             <div className="flex items-center gap-4 mb-4">
-              {isListening && (
+              {isListening && !isSpeaking && !isProcessing && !isTTSLoading && (
                 <div className="flex items-center gap-2 text-sky-700">
                   <span className="w-3 h-3 bg-sky-500 rounded-full animate-pulse" />
                   <span className="text-sm font-medium">Listening...</span>
+                </div>
+              )}
+              {isTTSLoading && (
+                <div className="flex items-center gap-2 text-purple-700">
+                  <span className="w-3 h-3 bg-purple-500 rounded-full animate-pulse" />
+                  <span className="text-sm font-medium">Preparing to speak...</span>
                 </div>
               )}
               {isSpeaking && (
@@ -423,7 +479,7 @@ export function Companion() {
                   <span className="text-sm font-medium">Speaking...</span>
                 </div>
               )}
-              {isProcessing && (
+              {isProcessing && !isTTSLoading && (
                 <div className="flex items-center gap-2 text-amber-700">
                   <span className="w-3 h-3 bg-amber-500 rounded-full animate-pulse" />
                   <span className="text-sm font-medium">Thinking...</span>
@@ -432,9 +488,9 @@ export function Companion() {
             </div>
 
             {/* Last transcript */}
-            {lastTranscript && (
+            {displayTranscript && (
               <div className="bg-white/60 rounded-xl px-4 py-2 max-w-md text-center">
-                <p className="text-gray-700 text-sm">&ldquo;{lastTranscript}&rdquo;</p>
+                <p className="text-gray-700 text-sm">&ldquo;{displayTranscript}&rdquo;</p>
               </div>
             )}
 

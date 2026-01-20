@@ -10,10 +10,20 @@ interface UseTTSOptions {
 
 export function useTTS({ sensoryPreference = 'normal', useElevenLabs = false }: UseTTSOptions = {}) {
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Loading state for TTS fetch
   const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUrlRef = useRef<string | null>(null); // Track blob URL for cleanup
   const abortControllerRef = useRef<AbortController | null>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  // Cleanup blob URL helper
+  const cleanupAudioUrl = useCallback(() => {
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+  }, []);
 
   // Browser's built-in speech synthesis (free, works offline)
   const speakWithBrowser = useCallback((text: string) => {
@@ -69,7 +79,7 @@ export function useTTS({ sensoryPreference = 'normal', useElevenLabs = false }: 
   // ElevenLabs API (high quality, costs credits)
   const speakWithElevenLabs = useCallback(
     async (text: string) => {
-      // Cancel any ongoing speech
+      // Cancel any ongoing speech and cleanup
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -77,48 +87,62 @@ export function useTTS({ sensoryPreference = 'normal', useElevenLabs = false }: 
         audioRef.current.pause();
         audioRef.current = null;
       }
+      cleanupAudioUrl();
 
       abortControllerRef.current = new AbortController();
+      setIsLoading(true); // Show loading state during fetch
 
-      const response = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, sensoryPreference }),
-        signal: abortControllerRef.current.signal,
-      });
+      try {
+        const response = await fetch('/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, sensoryPreference }),
+          signal: abortControllerRef.current.signal,
+        });
 
-      if (!response.ok) {
-        throw new Error('ElevenLabs API failed');
+        if (!response.ok) {
+          throw new Error('ElevenLabs API failed');
+        }
+
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        audioUrlRef.current = audioUrl; // Track for cleanup
+
+        const audio = new Audio(audioUrl);
+        audioRef.current = audio;
+
+        if (sensoryPreference === 'quiet') {
+          audio.volume = 0.6;
+        }
+
+        setIsLoading(false);
+
+        return new Promise<void>((resolve, reject) => {
+          audio.onended = () => {
+            setIsSpeaking(false);
+            cleanupAudioUrl();
+            resolve();
+          };
+
+          audio.onerror = () => {
+            setIsSpeaking(false);
+            cleanupAudioUrl();
+            reject(new Error('Audio playback failed'));
+          };
+
+          setIsSpeaking(true);
+          audio.play().catch((err) => {
+            cleanupAudioUrl();
+            reject(err);
+          });
+        });
+      } catch (err) {
+        setIsLoading(false);
+        cleanupAudioUrl();
+        throw err;
       }
-
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-
-      const audio = new Audio(audioUrl);
-      audioRef.current = audio;
-
-      if (sensoryPreference === 'quiet') {
-        audio.volume = 0.6;
-      }
-
-      return new Promise<void>((resolve, reject) => {
-        audio.onended = () => {
-          setIsSpeaking(false);
-          URL.revokeObjectURL(audioUrl);
-          resolve();
-        };
-
-        audio.onerror = () => {
-          setIsSpeaking(false);
-          URL.revokeObjectURL(audioUrl);
-          reject(new Error('Audio playback failed'));
-        };
-
-        setIsSpeaking(true);
-        audio.play().catch(reject);
-      });
     },
-    [sensoryPreference]
+    [sensoryPreference, cleanupAudioUrl]
   );
 
   const speak = useCallback(
@@ -132,8 +156,8 @@ export function useTTS({ sensoryPreference = 'normal', useElevenLabs = false }: 
           // Try ElevenLabs first, fall back to browser
           try {
             await speakWithElevenLabs(text);
-          } catch (err) {
-            console.warn('ElevenLabs failed, falling back to browser TTS:', err);
+          } catch {
+            // ElevenLabs failed, fall back to browser TTS silently
             await speakWithBrowser(text);
           }
         } else {
@@ -144,9 +168,9 @@ export function useTTS({ sensoryPreference = 'normal', useElevenLabs = false }: 
         if (err instanceof Error && err.name === 'AbortError') {
           return;
         }
-        console.error('TTS error:', err);
         setError('Failed to speak');
         setIsSpeaking(false);
+        setIsLoading(false);
       }
     },
     [useElevenLabs, speakWithElevenLabs, speakWithBrowser]
@@ -161,17 +185,20 @@ export function useTTS({ sensoryPreference = 'normal', useElevenLabs = false }: 
       audioRef.current.pause();
       audioRef.current = null;
     }
+    cleanupAudioUrl();
     // Stop browser speech
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
     setIsSpeaking(false);
-  }, []);
+    setIsLoading(false);
+  }, [cleanupAudioUrl]);
 
   return {
     speak,
     stop,
     isSpeaking,
+    isLoading,
     error,
   };
 }

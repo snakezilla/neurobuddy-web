@@ -79,15 +79,11 @@ export function useSpeechRecognition({
     };
 
     recognition.onerror = (event) => {
-      if (event.error === 'no-speech') {
-        // This is fine, just restart
+      if (event.error === 'no-speech' || event.error === 'aborted') {
+        // These are normal - no-speech means silence, aborted means intentional stop
         return;
       }
-      if (event.error === 'aborted') {
-        // User or system aborted, restart if needed
-        return;
-      }
-      console.error('Speech recognition error:', event.error);
+      // Only set error for actual problems (network, audio capture, etc.)
       setError(event.error);
     };
 

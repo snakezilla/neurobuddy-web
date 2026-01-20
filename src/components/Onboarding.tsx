@@ -91,8 +91,7 @@ export function Onboarding() {
       setParentSettings(settings);
       setSetupComplete(true);
       setCurrentScreen('companion');
-    } catch (err) {
-      console.error('Setup error:', err);
+    } catch {
       setError('Failed to save. Please try again.');
     } finally {
       setIsSubmitting(false);

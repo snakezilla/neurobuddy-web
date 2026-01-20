@@ -1,19 +1,89 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import type { ChildProfile, Routine, Message } from '@/types';
+import { z } from 'zod';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+// Validate API key at startup
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+// Zod schemas for input validation
+const ChildProfileSchema = z.object({
+  name: z.string().min(1).max(100),
+  likes: z.array(z.string().max(200)).max(20),
+  dislikes: z.array(z.string().max(200)).max(20),
+  communicationLevel: z.enum(['gestures', 'short_phrases', 'full_sentences']),
+  sensoryPreference: z.enum(['quiet', 'normal', 'visual_emphasis']),
+  routineChallenges: z.string().max(1000).optional().default(''),
 });
 
-interface ChatRequest {
-  userMessage: string;
-  profile: ChildProfile;
-  currentRoutine: Routine | null;
-  currentStepIndex: number;
-  conversationHistory: Message[];
-  timeOfDay: 'morning' | 'afternoon' | 'evening' | 'night';
+const RoutineStepSchema = z.object({
+  id: z.string(),
+  instruction: z.string(),
+  encouragement: z.string(),
+  microSteps: z.array(z.string()).optional(),
+});
+
+const RoutineSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  icon: z.string(),
+  triggerPhrases: z.array(z.string()),
+  steps: z.array(RoutineStepSchema),
+});
+
+const MessageSchema = z.object({
+  id: z.string(),
+  role: z.enum(['user', 'assistant']),
+  content: z.string(),
+  timestamp: z.number(),
+});
+
+const ChatRequestSchema = z.object({
+  userMessage: z.string().min(1).max(5000),
+  profile: ChildProfileSchema,
+  currentRoutine: RoutineSchema.nullable(),
+  currentStepIndex: z.number().int().min(0).max(100),
+  conversationHistory: z.array(MessageSchema).max(50),
+  timeOfDay: z.enum(['morning', 'afternoon', 'evening', 'night']),
+});
+
+// Lazy initialization of OpenAI client
+let openai: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY environment variable is not configured');
+  }
+  if (!openai) {
+    openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+  }
+  return openai;
 }
+
+// Rate limiting: simple in-memory store
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 30; // requests per minute
+const RATE_WINDOW = 60000; // 1 minute
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW });
+    return true;
+  }
+
+  if (record.count >= RATE_LIMIT) {
+    return false;
+  }
+
+  record.count++;
+  return true;
+}
+
+type ChatRequest = z.infer<typeof ChatRequestSchema>;
+type ChildProfile = z.infer<typeof ChildProfileSchema>;
+type Routine = z.infer<typeof RoutineSchema>;
 
 function buildSystemPrompt(
   profile: ChildProfile,
@@ -90,7 +160,32 @@ RESPONSE FORMAT:
 
 export async function POST(request: NextRequest) {
   try {
-    const body: ChatRequest = await request.json();
+    // Check API key is configured
+    if (!OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: 'Chat service not configured. Please set OPENAI_API_KEY.' },
+        { status: 503 }
+      );
+    }
+
+    // Rate limiting
+    const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait a moment.' },
+        { status: 429 }
+      );
+    }
+
+    // Validate input
+    const parseResult = ChatRequestSchema.safeParse(await request.json());
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: parseResult.error.flatten() },
+        { status: 400 }
+      );
+    }
+
     const {
       userMessage,
       profile,
@@ -98,7 +193,7 @@ export async function POST(request: NextRequest) {
       currentStepIndex,
       conversationHistory,
       timeOfDay,
-    } = body;
+    } = parseResult.data;
 
     const systemPrompt = buildSystemPrompt(
       profile,
@@ -117,7 +212,8 @@ export async function POST(request: NextRequest) {
       { role: 'user', content: userMessage },
     ];
 
-    const response = await openai.chat.completions.create({
+    const client = getOpenAIClient();
+    const response = await client.chat.completions.create({
       model: 'gpt-4o',
       messages,
       max_tokens: 150,
@@ -146,9 +242,10 @@ export async function POST(request: NextRequest) {
       indicatesFrustration,
     });
   } catch (error) {
-    console.error('Chat API error:', error);
+    // Log to server-side monitoring in production (not console)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to get response' },
+      { error: 'Failed to get response', message: errorMessage },
       { status: 500 }
     );
   }

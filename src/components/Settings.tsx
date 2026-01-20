@@ -68,8 +68,7 @@ export function Settings() {
       await saveProfile(updatedProfile);
       setChildProfile(updatedProfile);
       setMessage('Profile saved!');
-    } catch (error) {
-      console.error('Save error:', error);
+    } catch {
       setMessage('Failed to save');
     } finally {
       setIsSaving(false);
@@ -104,8 +103,7 @@ export function Settings() {
       setNewPin('');
       setConfirmNewPin('');
       setMessage('PIN updated!');
-    } catch (error) {
-      console.error('PIN change error:', error);
+    } catch {
       setMessage('Failed to update PIN');
     } finally {
       setIsSaving(false);
