@@ -187,6 +187,238 @@ export const ROUTINES: Routine[] = [
       },
     ],
   },
+  // ========================================
+  // NEW ENGAGEMENT-FOCUSED ROUTINES
+  // "Sugary" content with Paw Patrol energy
+  // ========================================
+  {
+    id: 'after-school',
+    name: 'After-School Wind-Down',
+    icon: '🎒',
+    triggerPhrases: [
+      'after school',
+      'back from school',
+      'got home',
+      'home from school',
+      'how was your day',
+      'just got back',
+      'finished school',
+    ],
+    steps: [
+      {
+        id: 'afterschool-1',
+        instruction: "Hey hey hey! You're BACK! I missed you SO much! Tell me, how was your day?",
+        encouragement: "Wow, that sounds amazing! I love hearing about your adventures!",
+        microSteps: [
+          'Take a deep breath',
+          'Think about one fun thing',
+          'Tell me about it!',
+        ],
+      },
+      {
+        id: 'afterschool-2',
+        instruction: "Okay okay okay! Let's do something FUN together! Should we draw something cool or build with blocks? You pick!",
+        encouragement: "GREAT choice! You always pick the best things!",
+        microSteps: [
+          'Think about what sounds fun',
+          'Say drawing or building',
+        ],
+      },
+      {
+        id: 'afterschool-3',
+        instruction: "Woohoo! Let's GO! What color should we use first? Blue like the sky or green like the grass?",
+        encouragement: "Ooh that's my FAVORITE! You have such good taste!",
+        microSteps: [
+          'Look at the colors',
+          'Pick your favorite one',
+        ],
+      },
+      {
+        id: 'afterschool-4',
+        instruction: "You're doing SO great! What should we add next? Something big or something small?",
+        encouragement: "PERFECT! This is looking INCREDIBLE!",
+        microSteps: [
+          'Think about what would look cool',
+          'Add it to your creation',
+        ],
+      },
+      {
+        id: 'afterschool-5',
+        instruction: "Okay friend, you said you were feeling tired earlier. Want to pick a yummy snack or find a cozy spot to rest?",
+        encouragement: "That's such a smart choice! You know what you need!",
+        microSteps: [
+          'Think about how your body feels',
+          'Pick snack or rest',
+        ],
+      },
+      {
+        id: 'afterschool-6',
+        instruction: "You are absolutely AMAZING! We had SO much fun together! Give yourself a big hug - you deserve it!",
+        encouragement: "I'm SO proud of you! You're the BEST! See you soon, superstar!",
+        microSteps: [
+          'Take a deep breath',
+          'Give yourself a hug',
+          'Smile big!',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'bedtime',
+    name: 'Bedtime Calm',
+    icon: '🌙',
+    triggerPhrases: [
+      'bedtime',
+      'going to sleep',
+      'sleepy',
+      'night time',
+      'time for bed',
+      'go to bed',
+      'tired',
+      'ready for sleep',
+    ],
+    steps: [
+      {
+        id: 'bedtime-1',
+        instruction: "Hey there, sleepy friend. It's getting to be nighttime. Let's get cozy together, okay?",
+        encouragement: "There you go, nice and comfy.",
+        microSteps: [
+          'Find a cozy spot',
+          'Get comfortable',
+        ],
+      },
+      {
+        id: 'bedtime-2',
+        instruction: "Let's breathe together. Breathe IN with me... and now OUT. Say 'in' when you breathe in!",
+        encouragement: "Perfect breathing! You sound so calm.",
+        microSteps: [
+          'Breathe in slowly',
+          'Say in',
+          'Breathe out slowly',
+          'Say out',
+        ],
+      },
+      {
+        id: 'bedtime-3',
+        instruction: "Again... IN... and OUT. Feel your tummy going up and down. You're doing great!",
+        encouragement: "So peaceful. You're a breathing champion!",
+        microSteps: [
+          'Feel your tummy rise',
+          'Feel it fall back down',
+        ],
+      },
+      {
+        id: 'bedtime-4',
+        instruction: "Now let's do a little story! Once upon a time, a little puppy went to the... where did the puppy go? You say it!",
+        encouragement: "Ooh yes! That's a wonderful place for a puppy adventure!",
+        microSteps: [
+          'Think of a fun place',
+          'Say it out loud',
+        ],
+      },
+      {
+        id: 'bedtime-5',
+        instruction: "And at that place, the puppy found a magical... what did the puppy find?",
+        encouragement: "Wow! What a special discovery! I love this story!",
+        microSteps: [
+          'Imagine something magical',
+          'Tell me what it is',
+        ],
+      },
+      {
+        id: 'bedtime-6',
+        instruction: "The puppy was so happy and sleepy. Just like you! Let's do one more slow breath... IN... and OUT.",
+        encouragement: "Beautiful. You're ready for sweet dreams.",
+        microSteps: [
+          'Close your eyes if you want',
+          'One big breath in',
+          'Let it all out',
+        ],
+      },
+      {
+        id: 'bedtime-7',
+        instruction: "Good night, sweet friend. I loved hearing your voice today. Sweet dreams!",
+        encouragement: "Sleep tight. You made today wonderful. I'll see you tomorrow!",
+        microSteps: [
+          'Snuggle into bed',
+          'Close your eyes',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'reading',
+    name: 'Reading Time',
+    icon: '📚',
+    triggerPhrases: [
+      'read',
+      'reading',
+      'story time',
+      'book',
+      'let\'s read',
+      'time to read',
+      'read together',
+      'read a book',
+    ],
+    steps: [
+      {
+        id: 'reading-1',
+        instruction: "READING TIME! Let's power up our super reading muscles! Stand up and shake it out with me - shake shake SHAKE!",
+        encouragement: "WOO! Your brain is all powered up!",
+        microSteps: [
+          'Stand up tall',
+          'Shake your arms',
+          'Shake your legs',
+        ],
+      },
+      {
+        id: 'reading-2',
+        instruction: "Count with me! ONE... TWO... THREE! Now let's sit down and get ready to read!",
+        encouragement: "Great counting! You're SO ready!",
+        microSteps: [
+          'Count out loud with me',
+          'Find a comfy reading spot',
+        ],
+      },
+      {
+        id: 'reading-3',
+        instruction: "I'll read one part, then YOU read the next part! Ready? Here we go!",
+        encouragement: "WOW! Your reading voice is AMAZING!",
+        microSteps: [
+          'Listen when I read',
+          'Then it\'s your turn!',
+        ],
+      },
+      {
+        id: 'reading-4',
+        instruction: "Keep going! You're doing SO well! Read the next line to me!",
+        encouragement: "Incredible! You're a reading SUPERSTAR!",
+        microSteps: [
+          'Find the next words',
+          'Say them nice and clear',
+        ],
+      },
+      {
+        id: 'reading-5',
+        instruction: "Okay brain quiz! In the story, who was the happiest? Why do you think they were happy?",
+        encouragement: "SMART answer! You really understood the story!",
+        microSteps: [
+          'Think about the story',
+          'Tell me who was happy',
+          'Tell me why',
+        ],
+      },
+      {
+        id: 'reading-6',
+        instruction: "You did it! BRAIN SPARKLE TIME! Your brain just got bigger and stronger! You're AMAZING!",
+        encouragement: "Reading champion! Superstar! I'm SO proud of you!",
+        microSteps: [
+          'Do a happy dance',
+          'Give yourself a high five',
+        ],
+      },
+    ],
+  },
 ];
 
 // Find a routine that matches the user's speech

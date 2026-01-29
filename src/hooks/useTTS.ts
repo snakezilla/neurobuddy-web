@@ -1,14 +1,31 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
-import type { SensoryPreference } from '@/types';
+import type { SensoryPreference, CharacterType } from '@/types';
+
+// Voice profiles for different characters
+const VOICE_PROFILES = {
+  puppy: {
+    pitch: 1.35, // Higher pitched, playful boyish voice
+    rate: 0.92,
+    // Prefer voices that sound friendly and energetic
+    preferredVoices: ['Google UK English Male', 'Daniel', 'Alex', 'Junior'],
+  },
+  princess: {
+    pitch: 1.45, // Even higher, gentle feminine voice
+    rate: 0.88, // Slightly slower, more melodic
+    // Prefer voices that sound warm and gentle
+    preferredVoices: ['Samantha', 'Google UK English Female', 'Karen', 'Victoria', 'Microsoft Zira'],
+  },
+};
 
 interface UseTTSOptions {
   sensoryPreference?: SensoryPreference;
+  character?: CharacterType;
   useElevenLabs?: boolean; // Set to true when you have API credits
 }
 
-export function useTTS({ sensoryPreference = 'normal', useElevenLabs = false }: UseTTSOptions = {}) {
+export function useTTS({ sensoryPreference = 'normal', character = 'puppy', useElevenLabs = false }: UseTTSOptions = {}) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false); // Loading state for TTS fetch
   const [error, setError] = useState<string | null>(null);
@@ -39,22 +56,34 @@ export function useTTS({ sensoryPreference = 'normal', useElevenLabs = false }: 
       const utterance = new SpeechSynthesisUtterance(text);
       utteranceRef.current = utterance;
 
-      // Configure voice settings
-      utterance.rate = sensoryPreference === 'quiet' ? 0.85 : 0.95; // Slightly slower
-      utterance.pitch = 1.1; // Slightly higher for friendlier tone
+      // Get character-specific voice profile
+      const voiceProfile = VOICE_PROFILES[character];
+
+      // Configure voice settings - higher pitched and cuter for children
+      const baseRate = voiceProfile.rate;
+      const basePitch = voiceProfile.pitch;
+
+      utterance.rate = sensoryPreference === 'quiet' ? baseRate * 0.9 : baseRate;
+      utterance.pitch = basePitch; // Higher pitched for cute, child-friendly voice
       utterance.volume = sensoryPreference === 'quiet' ? 0.7 : 1.0;
 
-      // Try to find a nice female voice
+      // Try to find the best voice for this character
       const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(
-        (v) =>
-          v.name.includes('Samantha') || // macOS
-          v.name.includes('Google US English') ||
-          v.name.includes('Microsoft Zira') || // Windows
-          (v.lang.startsWith('en') && v.name.toLowerCase().includes('female'))
+
+      // First try to find a preferred voice for this character
+      let selectedVoice = voices.find((v) =>
+        voiceProfile.preferredVoices.some((pref) => v.name.includes(pref))
       );
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
+
+      // Fallback to any English voice
+      if (!selectedVoice) {
+        selectedVoice = voices.find(
+          (v) => v.lang.startsWith('en') && !v.name.toLowerCase().includes('espeak')
+        );
+      }
+
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
       }
 
       utterance.onend = () => {
@@ -74,7 +103,7 @@ export function useTTS({ sensoryPreference = 'normal', useElevenLabs = false }: 
       setIsSpeaking(true);
       window.speechSynthesis.speak(utterance);
     });
-  }, [sensoryPreference]);
+  }, [sensoryPreference, character]);
 
   // ElevenLabs API (high quality, costs credits)
   const speakWithElevenLabs = useCallback(

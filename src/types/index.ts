@@ -10,6 +10,7 @@ export interface ChildProfile {
   communicationLevel: CommunicationLevel;
   routineChallenges: string;
   sensoryPreference: SensoryPreference;
+  character: CharacterType; // Puppy or Princess
   createdAt: number;
   updatedAt: number;
 }
@@ -43,6 +44,9 @@ export interface Routine {
   steps: RoutineStep[];
 }
 
+// Character type selection
+export type CharacterType = 'puppy' | 'princess';
+
 // Avatar states
 export type AvatarState =
   | 'idle'
@@ -55,7 +59,19 @@ export type AvatarState =
   | 'encouraging'
   | 'sleepy'
   | 'surprised'
-  | 'waving';
+  | 'waving'
+  // New expressive states for enhanced routines
+  | 'excited'        // Paw Patrol energy - bouncy, high stimulation
+  | 'playful'        // Co-activity mode - inviting, engaging
+  | 'breathing'      // Bedtime calm - slow, rhythmic
+  | 'night_mode'     // Evening wind-down - gentle, dimmer
+  | 'reading'        // Story time - focused, attentive
+  | 'celebrating_big' // Brain sparkle celebration - big reward moment
+  // Touch interaction states
+  | 'touched'        // Brief reaction to tap
+  | 'poked'          // Giggly reaction to repeated taps
+  | 'petted'         // Happy/content reaction to drag gesture
+  | 'curious';       // Head tilt for long press
 
 // Conversation types
 export interface Message {
@@ -66,7 +82,7 @@ export interface Message {
 }
 
 // App state
-export type AppScreen = 'onboarding' | 'companion' | 'settings' | 'pin_entry';
+export type AppScreen = 'onboarding' | 'character_selection' | 'companion' | 'settings' | 'pin_entry' | 'dashboard';
 
 export type FrustrationLevel = 'none' | 'mild' | 'moderate' | 'high';
 

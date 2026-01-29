@@ -5,6 +5,7 @@ import { useAppStore } from '@/store';
 import { getProfile, getSettings, isSetupComplete as checkSetup } from '@/lib/storage';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Onboarding } from '@/components/Onboarding';
+import { CharacterSelection } from '@/components/CharacterSelection';
 import { Companion } from '@/components/Companion';
 import { PinEntry } from '@/components/PinEntry';
 import { Settings } from '@/components/Settings';
@@ -59,6 +60,8 @@ export default function Home() {
     switch (currentScreen) {
       case 'onboarding':
         return <Onboarding />;
+      case 'character_selection':
+        return <CharacterSelection />;
       case 'companion':
         return <Companion />;
       case 'pin_entry':

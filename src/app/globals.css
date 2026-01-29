@@ -231,3 +231,249 @@ body {
 .animate-pulse-slow {
   animation: pulse-slow 4s ease-in-out infinite;
 }
+
+/* =====================================================
+   NEW EXPRESSIVE STATE ANIMATIONS
+   For enhanced routines: excited, playful, breathing, etc.
+   ===================================================== */
+
+/* Super bounce - excited/Paw Patrol energy */
+@keyframes super-bounce {
+  0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+  25% { transform: translateY(-20px) scale(1.1) rotate(-5deg); }
+  50% { transform: translateY(-5px) scale(1.05) rotate(0deg); }
+  75% { transform: translateY(-15px) scale(1.08) rotate(5deg); }
+}
+.animate-super-bounce {
+  animation: super-bounce 0.6s ease-in-out infinite;
+}
+
+/* Wiggle - playful state */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-8deg); }
+  40% { transform: rotate(8deg); }
+  60% { transform: rotate(-5deg); }
+  80% { transform: rotate(5deg); }
+}
+.animate-wiggle {
+  animation: wiggle 0.8s ease-in-out infinite;
+}
+
+/* Deep breathing - for breathing routine */
+@keyframes breathe-deep {
+  0%, 100% { transform: scale(1); }
+  30% { transform: scale(1.08); }
+  60% { transform: scale(1.08); }
+}
+.animate-breathe-deep {
+  animation: breathe-deep 4s ease-in-out infinite;
+}
+
+/* Lean forward - reading/attentive state */
+@keyframes lean-forward {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-5px) rotate(-3deg); }
+}
+.animate-lean-forward {
+  animation: lean-forward 3s ease-in-out infinite;
+}
+
+/* Celebration spin - big celebration moment */
+@keyframes celebration-spin {
+  0% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.1) rotate(5deg); }
+  50% { transform: scale(1.15) rotate(-5deg); }
+  75% { transform: scale(1.1) rotate(3deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+.animate-celebration-spin {
+  animation: celebration-spin 0.5s ease-in-out infinite;
+}
+
+/* Brain glow - celebration focus */
+@keyframes brain-glow {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.2); filter: brightness(1.3) drop-shadow(0 0 10px gold); }
+}
+.animate-brain-glow {
+  animation: brain-glow 0.8s ease-in-out infinite;
+}
+
+/* Sparkle burst animations */
+@keyframes sparkle-burst-1 {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  50% { transform: scale(1.5) rotate(180deg); opacity: 0.7; }
+}
+.animate-sparkle-burst-1 {
+  animation: sparkle-burst-1 0.6s ease-in-out infinite;
+}
+
+@keyframes sparkle-burst-2 {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  50% { transform: scale(1.4) rotate(-180deg); opacity: 0.6; }
+}
+.animate-sparkle-burst-2 {
+  animation: sparkle-burst-2 0.7s ease-in-out infinite;
+}
+
+/* Particle burst animations for brain sparkle */
+@keyframes particle-1 {
+  0% { transform: translate(0, 0) scale(0); opacity: 0; }
+  20% { transform: translate(-20px, -30px) scale(1); opacity: 1; }
+  100% { transform: translate(-40px, -60px) scale(0.5); opacity: 0; }
+}
+.animate-particle-1 {
+  animation: particle-1 1.5s ease-out infinite;
+}
+
+@keyframes particle-2 {
+  0% { transform: translate(0, 0) scale(0); opacity: 0; }
+  25% { transform: translate(25px, -25px) scale(1); opacity: 1; }
+  100% { transform: translate(50px, -50px) scale(0.5); opacity: 0; }
+}
+.animate-particle-2 {
+  animation: particle-2 1.4s ease-out infinite 0.1s;
+}
+
+@keyframes particle-3 {
+  0% { transform: translate(0, 0) scale(0); opacity: 0; }
+  30% { transform: translate(-15px, -20px) scale(1); opacity: 1; }
+  100% { transform: translate(-30px, -40px) scale(0.5); opacity: 0; }
+}
+.animate-particle-3 {
+  animation: particle-3 1.6s ease-out infinite 0.2s;
+}
+
+@keyframes particle-4 {
+  0% { transform: translate(0, 0) scale(0); opacity: 0; }
+  25% { transform: translate(0, -35px) scale(1.2); opacity: 1; }
+  100% { transform: translate(0, -70px) scale(0.6); opacity: 0; }
+}
+.animate-particle-4 {
+  animation: particle-4 1.3s ease-out infinite 0.15s;
+}
+
+@keyframes particle-5 {
+  0% { transform: translate(0, 0) scale(0); opacity: 0; }
+  20% { transform: translate(30px, -20px) scale(1); opacity: 1; }
+  100% { transform: translate(60px, -40px) scale(0.5); opacity: 0; }
+}
+.animate-particle-5 {
+  animation: particle-5 1.5s ease-out infinite 0.25s;
+}
+
+@keyframes particle-6 {
+  0% { transform: translate(0, 0) scale(0); opacity: 0; }
+  25% { transform: translate(-25px, -15px) scale(1); opacity: 1; }
+  100% { transform: translate(-50px, -30px) scale(0.5); opacity: 0; }
+}
+.animate-particle-6 {
+  animation: particle-6 1.4s ease-out infinite 0.3s;
+}
+
+/* Gentle fade for night mode overlay */
+@keyframes fade-gentle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.35; }
+}
+.animate-fade-gentle {
+  animation: fade-gentle 4s ease-in-out infinite;
+}
+
+/* Lean into - for petted/content state */
+@keyframes lean-into {
+  0%, 100% { transform: rotate(0deg) translateX(0); }
+  50% { transform: rotate(5deg) translateX(5px); }
+}
+.animate-lean-into {
+  animation: lean-into 1s ease-in-out infinite;
+}
+
+/* =====================================================
+   PRINCESS CHARACTER ANIMATIONS
+   ===================================================== */
+
+/* Hair sway animations */
+@keyframes hair-sway-slow {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(3deg); }
+}
+.animate-sway-slow {
+  animation: hair-sway-slow 3s ease-in-out infinite;
+}
+
+@keyframes hair-sway-fast {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(5deg); }
+}
+.animate-sway-fast {
+  animation: hair-sway-fast 1s ease-in-out infinite;
+}
+
+@keyframes hair-sway-excited {
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: rotate(8deg); }
+}
+.animate-sway-excited {
+  animation: hair-sway-excited 0.5s ease-in-out infinite;
+}
+
+/* Hair flow for idle state */
+@keyframes hair-flow {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(3px); }
+}
+.animate-hair-flow {
+  animation: hair-flow 4s ease-in-out infinite;
+}
+
+/* Side hair sway left */
+@keyframes hair-sway-left {
+  0%, 100% { transform: rotate(0deg) translateX(0); }
+  50% { transform: rotate(-3deg) translateX(-2px); }
+}
+.animate-hair-sway-left {
+  animation: hair-sway-left 3s ease-in-out infinite;
+}
+
+/* Side hair sway right */
+@keyframes hair-sway-right {
+  0%, 100% { transform: rotate(0deg) translateX(0); }
+  50% { transform: rotate(3deg) translateX(2px); }
+}
+.animate-hair-sway-right {
+  animation: hair-sway-right 3s ease-in-out infinite 0.5s;
+}
+
+/* Tiara sparkle animation */
+@keyframes tiara-sparkle {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.3) drop-shadow(0 0 5px gold); }
+}
+.animate-tiara-sparkle {
+  animation: tiara-sparkle 2s ease-in-out infinite;
+}
+
+/* Gem sparkle */
+@keyframes gem-sparkle {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.2); filter: brightness(1.5); }
+}
+.animate-gem-sparkle {
+  animation: gem-sparkle 1.5s ease-in-out infinite;
+}
+
+.animate-gem-sparkle-delay {
+  animation: gem-sparkle 1.5s ease-in-out infinite 0.3s;
+}
+
+/* Dress shimmer */
+@keyframes shimmer {
+  0%, 100% { stroke-opacity: 0.6; }
+  50% { stroke-opacity: 1; filter: drop-shadow(0 0 3px gold); }
+}
+.animate-shimmer {
+  animation: shimmer 2s ease-in-out infinite;
+}
+

@@ -72,6 +72,7 @@ export function Companion() {
 
   const { speak, stop: stopSpeaking, isSpeaking, isLoading: isTTSLoading } = useTTS({
     sensoryPreference: childProfile?.sensoryPreference,
+    character: childProfile?.character || 'puppy',
     useElevenLabs: true,
   });
 
@@ -318,33 +319,89 @@ export function Companion() {
     ]
   );
 
-  // Initial greeting
+  // Handle touch interactions from Avatar
+  const handleAvatarTouch = useCallback((type: 'tap' | 'poke' | 'pet' | 'longpress') => {
+    // Don't interrupt if already speaking or processing
+    if (isSpeaking || isProcessing) return;
+
+    let response = '';
+    let newState: AvatarState = 'happy';
+
+    switch (type) {
+      case 'tap':
+        response = ['Hehe!', 'Hi!', 'Boop!', "That's me!"][Math.floor(Math.random() * 4)];
+        newState = 'touched';
+        break;
+      case 'poke':
+        response = ['Hey, that tickles!', 'Hehe, stop it!', 'Silly!', 'Teehee!'][Math.floor(Math.random() * 4)];
+        newState = 'poked';
+        break;
+      case 'pet':
+        response = ['Mmm, that feels nice!', 'I love pets!', 'More please!', 'Youre so kind!'][Math.floor(Math.random() * 4)];
+        newState = 'petted';
+        break;
+      case 'longpress':
+        response = ["What's up?", 'You need something?', 'I am here!', 'Tell me!'][Math.floor(Math.random() * 4)];
+        newState = 'curious';
+        break;
+    }
+
+    setAvatarState(newState);
+    speak(response);
+
+    // Reset to idle after a short delay
+    setTimeout(() => {
+      if (!isSpeaking && !isListening) {
+        setAvatarState('idle');
+      }
+    }, 2000);
+  }, [isSpeaking, isProcessing, setAvatarState, speak, isListening]);
+
+  // Exciting opening questions a friendly therapist would ask
+  const getOpeningQuestion = () => {
+    const questions = [
+      "What's the most fun thing you did today?",
+      "Do you have a favorite color? Mine is blue!",
+      "What makes you smile the most?",
+      "Did anything super cool happen today?",
+      "What's your favorite thing to play?",
+      "Tell me about something that made you happy!",
+    ];
+    return questions[Math.floor(Math.random() * questions.length)];
+  };
+
+  // Initial greeting - character introduces themselves excitedly, then asks a great question
   useEffect(() => {
     if (childProfile && !hasGreetedRef.current) {
       hasGreetedRef.current = true;
-      const timeOfDay = getTimeOfDay();
-      const timeGreeting =
-        timeOfDay === 'morning'
-          ? 'Good morning'
-          : timeOfDay === 'afternoon'
-          ? 'Good afternoon'
-          : timeOfDay === 'evening'
-          ? 'Good evening'
-          : 'Hey there';
 
+      const characterName = childProfile.character === 'princess' ? 'Rosie' : 'Buddy';
       const like = childProfile.likes[0];
-      const personalTouch = like ? ` I was just thinking about ${like}!` : '';
+      const personalTouch = like ? ` I heard you love ${like}!` : '';
 
-      const greeting = `${timeGreeting}, ${childProfile.name}!${personalTouch} How are you?`;
+      // Excited introduction + therapeutic opening question
+      const introduction = `Hi ${childProfile.name}! I'm ${characterName}! I'm SO happy to meet you!${personalTouch}`;
+      const openingQuestion = getOpeningQuestion();
+      const fullGreeting = `${introduction} ${openingQuestion}`;
 
+      // 2-3 second delay before character speaks (as per brainstorm)
       const timer = setTimeout(() => {
-        speak(greeting);
-        addMessage({ role: 'assistant', content: greeting });
-      }, 500);
+        setAvatarState('excited');
+        speak(fullGreeting);
+        addMessage({ role: 'assistant', content: fullGreeting });
+
+        // Auto-activate microphone after speaking
+        setTimeout(() => {
+          setMicActive(true);
+          if (!isSpeaking) {
+            startListening();
+          }
+        }, 100);
+      }, 2500); // 2.5 second pause
 
       return () => clearTimeout(timer);
     }
-  }, [childProfile, speak, addMessage]);
+  }, [childProfile, speak, addMessage, setAvatarState, isSpeaking, startListening]);
 
   // Cleanup
   useEffect(() => {
@@ -441,7 +498,12 @@ export function Companion() {
       <main className="flex-1 flex flex-col items-center justify-center p-4">
         {/* Avatar - much bigger, fills most of the screen */}
         <div className="w-full h-full max-w-lg max-h-[70vh] flex items-center justify-center">
-          <Avatar state={avatarState} className="w-full h-full" />
+          <Avatar
+            state={avatarState}
+            character={childProfile?.character || 'puppy'}
+            className="w-full h-full"
+            onTouch={handleAvatarTouch}
+          />
         </div>
 
         {/* Non-immersive mode UI */}

@@ -75,6 +75,7 @@ export function Onboarding() {
         communicationLevel,
         routineChallenges: routineChallenges.trim(),
         sensoryPreference,
+        character: 'puppy', // Default, will be updated in character selection
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
@@ -90,7 +91,7 @@ export function Onboarding() {
       setChildProfile(profile);
       setParentSettings(settings);
       setSetupComplete(true);
-      setCurrentScreen('companion');
+      setCurrentScreen('character_selection');
     } catch {
       setError('Failed to save. Please try again.');
     } finally {
