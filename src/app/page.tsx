@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store';
 import { getProfile, getSettings, isSetupComplete as checkSetup } from '@/lib/storage';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Landing } from '@/components/Landing';
 import { Onboarding } from '@/components/Onboarding';
 import { CharacterSelection } from '@/components/CharacterSelection';
 import { Companion } from '@/components/Companion';
@@ -20,6 +21,7 @@ export default function Home() {
   } = useAppStore();
 
   const [isLoading, setIsLoading] = useState(true);
+  const [showLanding, setShowLanding] = useState(true);
 
   // Load saved data on mount
   useEffect(() => {
@@ -33,6 +35,8 @@ export default function Home() {
             setChildProfile(profile);
             setParentSettings(settings);
             setSetupComplete(true);
+            // If user has completed setup before, skip landing
+            setShowLanding(false);
             setCurrentScreen('companion');
           }
         }
@@ -53,6 +57,17 @@ export default function Home() {
           <p className="text-sky-600 font-medium">Loading...</p>
         </div>
       </div>
+    );
+  }
+
+  // Show landing page for new visitors
+  if (showLanding && currentScreen === 'onboarding') {
+    return (
+      <Landing 
+        onStart={() => {
+          setShowLanding(false);
+        }} 
+      />
     );
   }
 
