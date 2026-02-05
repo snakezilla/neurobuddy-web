@@ -1,3 +1,9 @@
+/**
+ * @file Companion.tsx
+ * @description This is the main interactive component for the NeuroBuddy application.
+ * It manages the avatar, speech recognition, text-to-speech, and the conversation flow.
+ * It's the core of the user experience, bringing together all the different parts of the application.
+ */
 'use client';
 
 import { useEffect, useCallback, useRef, useState } from 'react';
@@ -8,7 +14,13 @@ import { useTTS } from '@/hooks/useTTS';
 import { findRoutineByTrigger } from '@/lib/routines';
 import type { AvatarState, FrustrationLevel } from '@/types';
 
-// Debounce helper
+/**
+ * A debounce helper function to limit the rate at which a function gets called.
+ * This is used to prevent the speech recognition from firing too frequently.
+ * @param fn The function to debounce.
+ * @param delay The debounce delay in milliseconds.
+ * @returns A debounced version of the function.
+ */
 function debounce<T extends (...args: Parameters<T>) => void>(
   fn: T,
   delay: number
@@ -20,7 +32,7 @@ function debounce<T extends (...args: Parameters<T>) => void>(
   };
 }
 
-// Fallback phrases for offline mode
+// Fallback phrases for when the application is offline.
 const OFFLINE_PHRASES = [
   "I'm here with you!",
   "You're doing great!",
@@ -28,6 +40,10 @@ const OFFLINE_PHRASES = [
   "I believe in you!",
 ];
 
+/**
+ * Gets the time of day to adjust the avatar's state (e.g., sleepy at night).
+ * @returns The current time of day as 'morning', 'afternoon', 'evening', or 'night'.
+ */
 function getTimeOfDay(): 'morning' | 'afternoon' | 'evening' | 'night' {
   const hour = new Date().getHours();
   if (hour < 12) return 'morning';
@@ -36,6 +52,10 @@ function getTimeOfDay(): 'morning' | 'afternoon' | 'evening' | 'night' {
   return 'night';
 }
 
+/**
+ * The main Companion component.
+ * This component is responsible for the entire interactive experience.
+ */
 export function Companion() {
   const {
     childProfile,
@@ -62,7 +82,7 @@ export function Companion() {
   const [micActive, setMicActive] = useState(false); // Track if mic should be on
   const [displayTranscript, setDisplayTranscript] = useState(''); // For UI display only
 
-  // Queue-based transcript processing to avoid race conditions
+  // Refs to manage state that shouldn't trigger re-renders.
   const transcriptQueueRef = useRef<string[]>([]);
   const isProcessingRef = useRef(false); // Use ref to avoid stale closure issues
   const frustrationCountRef = useRef(0);
@@ -70,13 +90,14 @@ export function Companion() {
   const hasGreetedRef = useRef(false);
   const isMountedRef = useRef(true);
 
+  // Hook for Text-to-Speech functionality.
   const { speak, stop: stopSpeaking, isSpeaking, isLoading: isTTSLoading } = useTTS({
     sensoryPreference: childProfile?.sensoryPreference,
     character: childProfile?.character || 'puppy',
     useElevenLabs: true,
   });
 
-  // Process queue of transcripts (handles race conditions)
+  // Process a queue of transcripts to handle speech recognition results sequentially.
   const processQueue = useCallback(async () => {
     if (isProcessingRef.current || transcriptQueueRef.current.length === 0) {
       return;
@@ -91,19 +112,19 @@ export function Companion() {
     isProcessingRef.current = false;
     setIsProcessing(false);
 
-    // Process next in queue if any
+    // If there are more items in the queue, process them.
     if (transcriptQueueRef.current.length > 0 && !isSpeaking) {
       processQueue();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSpeaking]);
 
-  // Debounced handler for speech results (prevents rapid-fire processing)
+  // Debounced handler for speech recognition results.
   const debouncedHandleResult = useCallback(
     debounce((transcript: string) => {
       setDisplayTranscript(transcript);
       transcriptQueueRef.current.push(transcript);
-      // Only start processing if not currently speaking
+      // Only start processing if the avatar is not currently speaking.
       if (!isSpeaking && !isProcessingRef.current) {
         processQueue();
       }
@@ -111,58 +132,56 @@ export function Companion() {
     [isSpeaking, processQueue]
   );
 
-  // Speech recognition with ability to pause/resume
+  // Hook for speech recognition functionality.
   const { isSupported, isListening, startListening, stopListening, error: speechError } = useSpeechRecognition({
     onResult: debouncedHandleResult,
     onListeningChange: setListening,
     continuous: true,
   });
 
-  // Process queue when speaking stops
+  // Process the queue when the avatar stops speaking.
   useEffect(() => {
     if (!isSpeaking && transcriptQueueRef.current.length > 0 && !isProcessingRef.current) {
       processQueue();
     }
   }, [isSpeaking, processQueue]);
 
-  // Pause listening while speaking to prevent feedback
+  // Pause speech recognition while the avatar is speaking to prevent feedback loops.
   useEffect(() => {
     if (micActive) {
       if (isSpeaking) {
-        // Pause listening while puppy speaks
         stopListening();
       } else {
-        // Resume listening after puppy finishes
         startListening();
       }
     }
   }, [isSpeaking, micActive, startListening, stopListening]);
 
-  // Determine avatar state based on current activity
+  // Determine the avatar's state based on the current application state.
   const getAvatarState = useCallback((): AvatarState => {
     if (showHelpAlert) return 'waving';
     if (isSpeaking) return 'talking';
     if (isListening && !isSpeaking) return 'listening';
     if (isProcessing) return 'thinking';
 
-    // Time-based idle state
+    // Time-based idle state.
     const timeOfDay = getTimeOfDay();
     if (timeOfDay === 'night') return 'sleepy';
 
-    // Frustration-based states
+    // Frustration-based states.
     if (frustrationLevel === 'high') return 'concerned';
     if (frustrationLevel === 'moderate') return 'encouraging';
 
     return 'idle';
   }, [isSpeaking, isListening, isProcessing, frustrationLevel, showHelpAlert]);
 
-  // Update avatar state when dependencies change
+  // Update the avatar's state whenever dependencies change.
   useEffect(() => {
     const newState = getAvatarState();
     setAvatarState(newState);
   }, [getAvatarState, setAvatarState]);
 
-  // Online/offline detection
+  // Handle online/offline status changes.
   useEffect(() => {
     const handleOnline = () => setOnline(true);
     const handleOffline = () => setOnline(false);
@@ -176,18 +195,18 @@ export function Companion() {
     };
   }, [setOnline]);
 
-  // Frustration escalation system
+  // Escalate frustration levels based on repeated unsuccessful interactions.
   const handleFrustrationEscalation = useCallback(
     (count: number) => {
       let level: FrustrationLevel = 'none';
       if (count >= 4) {
         level = 'high';
-        // Trigger help alert
+        // Trigger a help alert to the parent.
         setShowHelpAlert(true);
         speak(`Hey, can someone help ${childProfile?.name}? We could use a hand!`);
       } else if (count >= 3) {
         level = 'moderate';
-        // Try distraction with likes
+        // Try a distraction technique.
         const like = childProfile?.likes[Math.floor(Math.random() * (childProfile?.likes.length || 1))];
         if (like) {
           speak(`You know what? Let's take a little break. Tell me about ${like}!`);
@@ -200,17 +219,16 @@ export function Companion() {
     [childProfile, setFrustrationLevel, speak]
   );
 
-  // Send message to AI and get response
+  // Process the user's input by sending it to the AI and handling the response.
   const processUserInput = useCallback(
     async (transcript: string) => {
       if (!childProfile || isProcessing || !transcript) return;
 
       setIsProcessing(true);
 
-      // Add user message
       addMessage({ role: 'user', content: transcript });
 
-      // Check for routine trigger if no active routine
+      // If there's no active routine, check if the user is trying to start one.
       if (!currentRoutine) {
         const routine = findRoutineByTrigger(transcript);
         if (routine) {
@@ -224,6 +242,7 @@ export function Companion() {
       }
 
       try {
+        // Send the user's message to the chat API.
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -246,16 +265,15 @@ export function Companion() {
 
         addMessage({ role: 'assistant', content: assistantMessage });
 
-        // Handle routine progress
+        // If the user is in a routine, check for progress.
         if (currentRoutine && data.indicatesProgress) {
           const isLastStep = currentStepIndex >= currentRoutine.steps.length - 1;
 
           if (!isLastStep) {
-            // Calculate next step index BEFORE calling nextStep to avoid stale closure
             const nextStepIndex = currentStepIndex + 1;
             const nextInstruction = currentRoutine.steps[nextStepIndex]?.instruction;
 
-            nextStep(); // Now advance the step
+            nextStep();
             setAvatarState('celebrating');
 
             if (nextInstruction) {
@@ -264,19 +282,18 @@ export function Companion() {
               await speak(assistantMessage);
             }
           } else {
-            // Routine complete!
+            // The routine is complete.
             setAvatarState('celebrating');
             endRoutine();
             await speak(assistantMessage);
           }
-          // Reset frustration on progress
           frustrationCountRef.current = 0;
           setFrustrationLevel('none');
         } else {
           await speak(assistantMessage);
         }
 
-        // Handle frustration detection
+        // Check for signs of frustration in the user's response.
         if (data.indicatesFrustration) {
           frustrationCountRef.current++;
           handleFrustrationEscalation(frustrationCountRef.current);
@@ -288,13 +305,13 @@ export function Companion() {
 
         retryTimeoutRef.current = setTimeout(async () => {
           if (!isMountedRef.current) return;
-          // If still offline after 10 seconds, use fallback
+          // If the app is still offline after a delay, use a fallback phrase.
           const fallback = OFFLINE_PHRASES[Math.floor(Math.random() * OFFLINE_PHRASES.length)];
           addMessage({ role: 'assistant', content: fallback });
           await speak(fallback);
         }, 10000);
 
-        // Immediate gentle response
+        // Provide an immediate gentle response.
         await speak("Hold on, I'm thinking...");
       } finally {
         if (isMountedRef.current) {
@@ -319,9 +336,8 @@ export function Companion() {
     ]
   );
 
-  // Handle touch interactions from Avatar
+  // Handle touch interactions with the avatar.
   const handleAvatarTouch = useCallback((type: 'tap' | 'poke' | 'pet' | 'longpress') => {
-    // Don't interrupt if already speaking or processing
     if (isSpeaking || isProcessing) return;
 
     let response = '';
@@ -349,7 +365,6 @@ export function Companion() {
     setAvatarState(newState);
     speak(response);
 
-    // Reset to idle after a short delay
     setTimeout(() => {
       if (!isSpeaking && !isListening) {
         setAvatarState('idle');
@@ -357,7 +372,7 @@ export function Companion() {
     }, 2000);
   }, [isSpeaking, isProcessing, setAvatarState, speak, isListening]);
 
-  // Exciting opening questions a friendly therapist would ask
+  // Get a friendly opening question to start the conversation.
   const getOpeningQuestion = () => {
     const questions = [
       "What's the most fun thing you did today?",
@@ -370,7 +385,7 @@ export function Companion() {
     return questions[Math.floor(Math.random() * questions.length)];
   };
 
-  // Initial greeting - character introduces themselves excitedly, then asks a great question
+  // Greet the user when the component mounts.
   useEffect(() => {
     if (childProfile && !hasGreetedRef.current) {
       hasGreetedRef.current = true;
@@ -379,31 +394,28 @@ export function Companion() {
       const like = childProfile.likes[0];
       const personalTouch = like ? ` I heard you love ${like}!` : '';
 
-      // Excited introduction + therapeutic opening question
       const introduction = `Hi ${childProfile.name}! I'm ${characterName}! I'm SO happy to meet you!${personalTouch}`;
       const openingQuestion = getOpeningQuestion();
       const fullGreeting = `${introduction} ${openingQuestion}`;
 
-      // 2-3 second delay before character speaks (as per brainstorm)
       const timer = setTimeout(() => {
         setAvatarState('excited');
         speak(fullGreeting);
         addMessage({ role: 'assistant', content: fullGreeting });
 
-        // Auto-activate microphone after speaking
         setTimeout(() => {
           setMicActive(true);
           if (!isSpeaking) {
             startListening();
           }
         }, 100);
-      }, 2500); // 2.5 second pause
+      }, 2500);
 
       return () => clearTimeout(timer);
     }
   }, [childProfile, speak, addMessage, setAvatarState, isSpeaking, startListening]);
 
-  // Cleanup
+  // Clean up resources when the component unmounts.
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -422,7 +434,6 @@ export function Companion() {
     setFrustrationLevel('none');
   };
 
-  // Toggle microphone (always-on mode)
   const toggleMicrophone = () => {
     if (micActive) {
       setMicActive(false);
@@ -441,12 +452,10 @@ export function Companion() {
         showHelpAlert ? 'bg-amber-100' : 'bg-sky-200'
       }`}
     >
-      {/* Help alert overlay */}
       {showHelpAlert && (
         <div className="absolute inset-0 border-8 border-amber-400 pointer-events-none animate-pulse z-10" />
       )}
 
-      {/* Settings button - always visible */}
       <header className="absolute top-0 left-0 right-0 flex justify-between items-center p-4 z-20">
         <div className="flex items-center gap-2">
           {!isOnline && (
@@ -456,7 +465,6 @@ export function Companion() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {/* Immersive mode toggle */}
           <button
             onClick={() => setImmersiveMode(!immersiveMode)}
             className="p-2 rounded-full bg-white/50 hover:bg-white/80 transition-colors"
@@ -470,7 +478,6 @@ export function Companion() {
               )}
             </svg>
           </button>
-          {/* Settings button */}
           <button
             onClick={() => setCurrentScreen('pin_entry')}
             className="p-2 rounded-full bg-white/50 hover:bg-white/80 transition-colors"
@@ -494,9 +501,7 @@ export function Companion() {
         </div>
       </header>
 
-      {/* Main content - Avatar fills screen */}
       <main className="flex-1 flex flex-col items-center justify-center p-4">
-        {/* Avatar - much bigger, fills most of the screen */}
         <div className="w-full h-full max-w-lg max-h-[70vh] flex items-center justify-center">
           <Avatar
             state={avatarState}
@@ -506,10 +511,8 @@ export function Companion() {
           />
         </div>
 
-        {/* Non-immersive mode UI */}
         {!immersiveMode && (
           <>
-            {/* Current routine indicator */}
             {currentRoutine && (
               <div className="bg-white/80 rounded-2xl px-6 py-3 mb-4 text-center">
                 <div className="text-sm text-gray-600">
@@ -521,7 +524,6 @@ export function Companion() {
               </div>
             )}
 
-            {/* Status indicators */}
             <div className="flex items-center gap-4 mb-4">
               {isListening && !isSpeaking && !isProcessing && !isTTSLoading && (
                 <div className="flex items-center gap-2 text-sky-700">
@@ -549,14 +551,12 @@ export function Companion() {
               )}
             </div>
 
-            {/* Last transcript */}
             {displayTranscript && (
               <div className="bg-white/60 rounded-xl px-4 py-2 max-w-md text-center">
                 <p className="text-gray-700 text-sm">&ldquo;{displayTranscript}&rdquo;</p>
               </div>
             )}
 
-            {/* Speech recognition error */}
             {speechError && (
               <div className="mt-4 bg-red-100 text-red-700 px-4 py-2 rounded-xl text-sm">
                 Microphone error: {speechError}
@@ -574,7 +574,6 @@ export function Companion() {
         )}
       </main>
 
-      {/* Help alert dismiss button */}
       {showHelpAlert && (
         <div className="absolute bottom-24 left-4 right-4 z-20">
           <button
@@ -586,7 +585,6 @@ export function Companion() {
         </div>
       )}
 
-      {/* Microphone button - always visible at bottom */}
       <footer className="absolute bottom-0 left-0 right-0 p-4 flex justify-center z-20">
         <button
           onClick={toggleMicrophone}
@@ -621,7 +619,6 @@ export function Companion() {
             )}
           </svg>
         </button>
-        {/* Mic status indicator */}
         {micActive && !immersiveMode && (
           <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white/80 px-3 py-1 rounded-full text-xs text-gray-600">
             {isSpeaking ? 'Paused while speaking' : 'Always listening'}

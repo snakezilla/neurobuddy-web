@@ -1,3 +1,9 @@
+/**
+ * @file useSpeechRecognition.ts
+ * @description This hook provides a simple interface for using the browser's Speech Recognition API.
+ * It handles starting and stopping listening, and provides feedback on the current state.
+ * It is a core part of the voice interaction in the application.
+ */
 'use client';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
@@ -8,7 +14,7 @@ interface UseSpeechRecognitionOptions {
   continuous?: boolean;
 }
 
-// Type for the SpeechRecognition API (browser-specific)
+// Define a consistent type for the SpeechRecognition API, handling vendor prefixes.
 type SpeechRecognitionType = {
   continuous: boolean;
   interimResults: boolean;
@@ -21,6 +27,11 @@ type SpeechRecognitionType = {
   stop: () => void;
 };
 
+/**
+ * A custom hook for handling speech recognition.
+ * @param {UseSpeechRecognitionOptions} options - Configuration for the speech recognition.
+ * @returns An object with state and functions to control speech recognition.
+ */
 export function useSpeechRecognition({
   onResult,
   onListeningChange,
@@ -33,7 +44,7 @@ export function useSpeechRecognition({
   const shouldBeListeningRef = useRef(false);
 
   useEffect(() => {
-    // Check for browser support
+    // Check for browser support for the Speech Recognition API.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const windowAny = typeof window !== 'undefined' ? (window as any) : null;
     const SpeechRecognitionAPI = windowAny?.SpeechRecognition || windowAny?.webkitSpeechRecognition;
@@ -46,6 +57,7 @@ export function useSpeechRecognition({
 
     setIsSupported(true);
 
+    // Create and configure the speech recognition instance.
     const recognition = new SpeechRecognitionAPI() as SpeechRecognitionType;
     recognition.continuous = continuous;
     recognition.interimResults = false;
@@ -68,7 +80,7 @@ export function useSpeechRecognition({
       setIsListening(false);
       onListeningChange?.(false);
 
-      // Auto-restart if we should still be listening
+      // Automatically restart listening if it should be continuous.
       if (shouldBeListeningRef.current && continuous) {
         try {
           recognition.start();
@@ -79,22 +91,25 @@ export function useSpeechRecognition({
     };
 
     recognition.onerror = (event) => {
+      // Ignore common, non-critical errors.
       if (event.error === 'no-speech' || event.error === 'aborted') {
-        // These are normal - no-speech means silence, aborted means intentional stop
         return;
       }
-      // Only set error for actual problems (network, audio capture, etc.)
       setError(event.error);
     };
 
     recognitionRef.current = recognition;
 
+    // Clean up on unmount.
     return () => {
       shouldBeListeningRef.current = false;
       recognition.stop();
     };
   }, [continuous, onListeningChange, onResult]);
 
+  /**
+   * Starts the speech recognition service.
+   */
   const startListening = useCallback(() => {
     if (recognitionRef.current && !isListening) {
       shouldBeListeningRef.current = true;
@@ -106,6 +121,9 @@ export function useSpeechRecognition({
     }
   }, [isListening]);
 
+  /**
+   * Stops the speech recognition service.
+   */
   const stopListening = useCallback(() => {
     shouldBeListeningRef.current = false;
     if (recognitionRef.current) {

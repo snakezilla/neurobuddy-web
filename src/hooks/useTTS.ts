@@ -1,20 +1,25 @@
+/**
+ * @file useTTS.ts
+ * @description This hook provides Text-to-Speech (TTS) functionality for the application.
+ * It can use either the browser's built-in speech synthesis or the ElevenLabs API for higher quality audio.
+ * It also includes character-specific voice profiles and sensory preferences.
+ */
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
 import type { SensoryPreference, CharacterType } from '@/types';
 
-// Voice profiles for different characters
+// Voice profiles for different characters to give them a unique personality.
 const VOICE_PROFILES = {
   puppy: {
-    pitch: 1.35, // Higher pitched, playful boyish voice
+    pitch: 1.35, // A higher-pitched, playful voice.
     rate: 0.92,
-    // Prefer voices that sound friendly and energetic
+    // A list of preferred voice names to match the character.
     preferredVoices: ['Google UK English Male', 'Daniel', 'Alex', 'Junior'],
   },
   princess: {
-    pitch: 1.45, // Even higher, gentle feminine voice
-    rate: 0.88, // Slightly slower, more melodic
-    // Prefer voices that sound warm and gentle
+    pitch: 1.45, // A gentle, higher-pitched feminine voice.
+    rate: 0.88, // Slightly slower and more melodic.
     preferredVoices: ['Samantha', 'Google UK English Female', 'Karen', 'Victoria', 'Microsoft Zira'],
   },
 };
@@ -22,19 +27,26 @@ const VOICE_PROFILES = {
 interface UseTTSOptions {
   sensoryPreference?: SensoryPreference;
   character?: CharacterType;
-  useElevenLabs?: boolean; // Set to true when you have API credits
+  useElevenLabs?: boolean; // Option to use the ElevenLabs API.
 }
 
+/**
+ * A custom hook for handling Text-to-Speech.
+ * @param {UseTTSOptions} options - Configuration for the TTS.
+ * @returns An object with state and functions to control TTS.
+ */
 export function useTTS({ sensoryPreference = 'normal', character = 'puppy', useElevenLabs = false }: UseTTSOptions = {}) {
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // Loading state for TTS fetch
+  const [isLoading, setIsLoading] = useState(false); // For loading state when fetching from API.
   const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioUrlRef = useRef<string | null>(null); // Track blob URL for cleanup
+  const audioUrlRef = useRef<string | null>(null); // To keep track of blob URLs for cleanup.
   const abortControllerRef = useRef<AbortController | null>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Cleanup blob URL helper
+  /**
+   * Cleans up the audio blob URL to prevent memory leaks.
+   */
   const cleanupAudioUrl = useCallback(() => {
     if (audioUrlRef.current) {
       URL.revokeObjectURL(audioUrlRef.current);
@@ -42,7 +54,10 @@ export function useTTS({ sensoryPreference = 'normal', character = 'puppy', useE
     }
   }, []);
 
-  // Browser's built-in speech synthesis (free, works offline)
+  /**
+   * Uses the browser's built-in speech synthesis to speak the given text.
+   * This is a fallback for when the ElevenLabs API is not used or fails.
+   */
   const speakWithBrowser = useCallback((text: string) => {
     return new Promise<void>((resolve, reject) => {
       if (!('speechSynthesis' in window)) {
@@ -50,32 +65,27 @@ export function useTTS({ sensoryPreference = 'normal', character = 'puppy', useE
         return;
       }
 
-      // Cancel any ongoing speech
       window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
       utteranceRef.current = utterance;
 
-      // Get character-specific voice profile
       const voiceProfile = VOICE_PROFILES[character];
 
-      // Configure voice settings - higher pitched and cuter for children
+      // Adjust voice settings based on sensory preference and character.
       const baseRate = voiceProfile.rate;
       const basePitch = voiceProfile.pitch;
 
       utterance.rate = sensoryPreference === 'quiet' ? baseRate * 0.9 : baseRate;
-      utterance.pitch = basePitch; // Higher pitched for cute, child-friendly voice
+      utterance.pitch = basePitch;
       utterance.volume = sensoryPreference === 'quiet' ? 0.7 : 1.0;
 
-      // Try to find the best voice for this character
+      // Find the best available voice for the character.
       const voices = window.speechSynthesis.getVoices();
-
-      // First try to find a preferred voice for this character
       let selectedVoice = voices.find((v) =>
         voiceProfile.preferredVoices.some((pref) => v.name.includes(pref))
       );
 
-      // Fallback to any English voice
       if (!selectedVoice) {
         selectedVoice = voices.find(
           (v) => v.lang.startsWith('en') && !v.name.toLowerCase().includes('espeak')
@@ -96,7 +106,7 @@ export function useTTS({ sensoryPreference = 'normal', character = 'puppy', useE
         if (event.error !== 'canceled') {
           reject(new Error(event.error));
         } else {
-          resolve(); // Cancelled is not an error
+          resolve();
         }
       };
 
@@ -105,10 +115,11 @@ export function useTTS({ sensoryPreference = 'normal', character = 'puppy', useE
     });
   }, [sensoryPreference, character]);
 
-  // ElevenLabs API (high quality, costs credits)
+  /**
+   * Uses the ElevenLabs API to generate high-quality audio and play it.
+   */
   const speakWithElevenLabs = useCallback(
     async (text: string) => {
-      // Cancel any ongoing speech and cleanup
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -119,7 +130,7 @@ export function useTTS({ sensoryPreference = 'normal', character = 'puppy', useE
       cleanupAudioUrl();
 
       abortControllerRef.current = new AbortController();
-      setIsLoading(true); // Show loading state during fetch
+      setIsLoading(true);
 
       try {
         const response = await fetch('/api/tts', {
@@ -135,7 +146,7 @@ export function useTTS({ sensoryPreference = 'normal', character = 'puppy', useE
 
         const audioBlob = await response.blob();
         const audioUrl = URL.createObjectURL(audioBlob);
-        audioUrlRef.current = audioUrl; // Track for cleanup
+        audioUrlRef.current = audioUrl;
 
         const audio = new Audio(audioUrl);
         audioRef.current = audio;
@@ -174,6 +185,9 @@ export function useTTS({ sensoryPreference = 'normal', character = 'puppy', useE
     [sensoryPreference, cleanupAudioUrl]
   );
 
+  /**
+   * The main speak function that decides whether to use ElevenLabs or the browser's TTS.
+   */
   const speak = useCallback(
     async (text: string) => {
       if (!text) return;
@@ -182,15 +196,13 @@ export function useTTS({ sensoryPreference = 'normal', character = 'puppy', useE
 
       try {
         if (useElevenLabs) {
-          // Try ElevenLabs first, fall back to browser
+          // Attempt to use ElevenLabs, but fall back to browser TTS if it fails.
           try {
             await speakWithElevenLabs(text);
           } catch {
-            // ElevenLabs failed, fall back to browser TTS silently
             await speakWithBrowser(text);
           }
         } else {
-          // Use browser speech synthesis (free)
           await speakWithBrowser(text);
         }
       } catch (err) {
@@ -205,8 +217,10 @@ export function useTTS({ sensoryPreference = 'normal', character = 'puppy', useE
     [useElevenLabs, speakWithElevenLabs, speakWithBrowser]
   );
 
+  /**
+   * Stops any currently playing audio, whether from ElevenLabs or the browser.
+   */
   const stop = useCallback(() => {
-    // Stop ElevenLabs audio
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -215,7 +229,6 @@ export function useTTS({ sensoryPreference = 'normal', character = 'puppy', useE
       audioRef.current = null;
     }
     cleanupAudioUrl();
-    // Stop browser speech
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }

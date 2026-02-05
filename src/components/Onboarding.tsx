@@ -1,10 +1,17 @@
-'use client';
+/**
+ * @file Onboarding.tsx
+ * @description This component guides the parent/caregiver through the initial setup process for NeuroBuddy.
+ * It collects information about the child and parent settings, creating a personalized experience.
+ * This is the first screen a new user will see.
+ */
+'use-client';
 
 import { useState } from 'react';
 import { useAppStore } from '@/store';
 import { saveProfile, saveSettings, hashPin } from '@/lib/storage';
 import type { CommunicationLevel, SensoryPreference, ChildProfile, ParentSettings } from '@/types';
 
+// Constants for communication and sensory options to ensure consistency.
 const COMMUNICATION_OPTIONS: { value: CommunicationLevel; label: string; description: string }[] = [
   { value: 'gestures', label: 'Mostly gestures', description: 'Uses pointing, nodding, simple sounds' },
   { value: 'short_phrases', label: 'Short phrases', description: 'Uses 2-4 word sentences' },
@@ -17,6 +24,9 @@ const SENSORY_OPTIONS: { value: SensoryPreference; label: string; description: s
   { value: 'visual_emphasis', label: 'Visual emphasis', description: 'Benefits from visual descriptions' },
 ];
 
+/**
+ * The Onboarding component, a multi-step wizard for initial setup.
+ */
 export function Onboarding() {
   const { setChildProfile, setParentSettings, setSetupComplete, setCurrentScreen } = useAppStore();
 
@@ -34,6 +44,10 @@ export function Onboarding() {
 
   const totalSteps = 4;
 
+  /**
+   * Handles moving to the next step in the onboarding process.
+   * Includes validation for the current step.
+   */
   const handleNext = () => {
     setError('');
     if (step === 1 && !name.trim()) {
@@ -45,12 +59,19 @@ export function Onboarding() {
     }
   };
 
+  /**
+   * Handles moving to the previous step in the onboarding process.
+   */
   const handleBack = () => {
     if (step > 1) {
       setStep(step - 1);
     }
   };
 
+  /**
+   * Handles the final submission of the onboarding form.
+   * Validates the PIN, creates the child and parent profiles, and saves them to storage.
+   */
   const handleSubmit = async () => {
     setError('');
 
@@ -75,7 +96,7 @@ export function Onboarding() {
         communicationLevel,
         routineChallenges: routineChallenges.trim(),
         sensoryPreference,
-        character: 'puppy', // Default, will be updated in character selection
+        character: 'puppy', // Default character, updated later.
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
@@ -85,6 +106,7 @@ export function Onboarding() {
         scheduledRoutines: [],
       };
 
+      // Save profiles to IndexedDB and update the global state.
       await saveProfile(profile);
       await saveSettings(settings);
 
@@ -102,7 +124,7 @@ export function Onboarding() {
   return (
     <div className="min-h-screen bg-sky-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-xl max-w-md w-full p-8">
-        {/* Progress indicator */}
+        {/* Progress indicator shows the current step. */}
         <div className="flex justify-center gap-2 mb-8">
           {Array.from({ length: totalSteps }, (_, i) => (
             <div
@@ -114,7 +136,7 @@ export function Onboarding() {
           ))}
         </div>
 
-        {/* Step 1: Child's name and interests */}
+        {/* Step 1: Child's name and interests. */}
         {step === 1 && (
           <div className="space-y-6">
             <div className="text-center">
@@ -164,7 +186,7 @@ export function Onboarding() {
           </div>
         )}
 
-        {/* Step 2: Communication and sensory */}
+        {/* Step 2: Communication style and sensory preferences. */}
         {step === 2 && (
           <div className="space-y-6">
             <div className="text-center">
@@ -218,7 +240,7 @@ export function Onboarding() {
           </div>
         )}
 
-        {/* Step 3: Routine challenges */}
+        {/* Step 3: Routine challenges. */}
         {step === 3 && (
           <div className="space-y-6">
             <div className="text-center">
@@ -244,7 +266,7 @@ export function Onboarding() {
           </div>
         )}
 
-        {/* Step 4: PIN setup */}
+        {/* Step 4: Parent PIN setup. */}
         {step === 4 && (
           <div className="space-y-6">
             <div className="text-center">
@@ -284,14 +306,14 @@ export function Onboarding() {
           </div>
         )}
 
-        {/* Error message */}
+        {/* Display any validation errors. */}
         {error && (
           <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm text-center">
             {error}
           </div>
         )}
 
-        {/* Navigation buttons */}
+        {/* Navigation buttons to move between steps. */}
         <div className="flex gap-3 mt-8">
           {step > 1 && (
             <button

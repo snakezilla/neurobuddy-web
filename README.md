@@ -1,3 +1,15 @@
+<p align="center">
+  <a href="https://nextjs.org" target="_blank">
+    <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js">
+  </a>
+  <a href="https://www.typescriptlang.org/" target="_blank">
+    <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
+  </a>
+  <a href="https://vercel.com" target="_blank">
+    <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel">
+  </a>
+</p>
+
 # NeuroBuddy
 
 **An AI-powered animated companion designed specifically for children with Down syndrome to help them navigate daily routines through voice interaction.**
@@ -14,9 +26,33 @@ Children with Down syndrome often benefit from:
 - **Personalization** - Incorporates the child's interests into conversations
 - **Sensory accommodation** - Adjusts voice volume and speed for sensory preferences
 
+## Research Background
+
+NeuroBuddy is grounded in extensive research and real-world feedback:
+- **80+ Stakeholder Interviews**: We conducted in-depth interviews with educators, parents, and students to understand the specific needs and challenges of children with Down syndrome.
+- **Partnership with Drewry Secondary School**: We partnered with Drewry Secondary School in Toronto to gather insights from special education professionals and validate our approach.
+- **Literature Review**: Our design is informed by a review of over 50 academic papers on learning science, developmental psychology, and human-computer interaction for children with disabilities.
+
+## Design Principles
+
+Our approach is built on a foundation of learning science and user-centered design:
+- **Scaffolding**: Inspired by Vygotsky's Zone of Proximal Development, NeuroBuddy provides just enough support to help the child succeed independently. Communication levels are adapted to the child's needs.
+- **Cognitive Load Management**: Instructions are kept simple, short, and focused, avoiding overwhelming the child with too much information at once.
+- **Intrinsic Motivation**: By incorporating a child's interests and celebrating their successes, we aim to foster a sense of accomplishment and intrinsic motivation.
+- **Errorless Learning**: The system is designed to guide children toward success, minimizing opportunities for failure and the frustration that comes with it.
+- **Predictability and Consistency**: Routines are presented in a consistent manner, which is crucial for children who thrive on predictability.
+
 ## Live Demo
 
 **[Try NeuroBuddy Now](https://neurobuddy-web.vercel.app)**
+
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/screenshot1.png" width="400" alt="Screenshot 1">
+  &nbsp; &nbsp; &nbsp;
+  <img src="screenshots/screenshot2.png" width="400" alt="Screenshot 2">
+</p>
 
 ## Features
 
@@ -218,6 +254,10 @@ MIT License - feel free to use and modify for your own projects.
 - Inspired by the need for patient, consistent support for children with Down syndrome
 - Built with love using Next.js, OpenAI, and ElevenLabs
 - Avatar concept: A friendly, non-threatening puppy companion
+
+## Created By
+
+This project was created by **Ahsan Eslami**.
 
 ---
 
